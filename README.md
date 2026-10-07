@@ -8,6 +8,8 @@ Windows and Linux.
 
 *Deutsche Kurzanleitung: [weiter unten](#deutsch).*
 
+![shelly2esphome GUI after a successful flash](docs/screenshot.png)
+
 > **Warning:** Once flashed, there is no way back to the Shelly firmware except via a
 > serial adapter. A broken ESPHome build (wrong board settings, no Wi-Fi credentials)
 > also means serial recovery. Read [ESPHome config](#esphome-config) first.
@@ -24,6 +26,11 @@ Windows and Linux.
 | Plus Uni    | untested, same partition table |
 
 The Mini series (ESP32-C3) and Gen3/Gen4 devices are **not** supported.
+
+| Platform | Status |
+|----------|--------|
+| Linux    | tested (GUI and command line) |
+| Windows  | **not tested yet**, feedback welcome |
 
 ## How it works
 
@@ -62,7 +69,9 @@ python3 shelly2esphome.py
 2. **Firmware:** choose the ESPHome `.bin` (ESPHome dashboard -> Install -> Manual download,
    preferably *Factory format*).
 3. **Flash:** "Check", then "Flash ESPHome". A confirmation dialog shows device, model and
-   both firmware versions.
+   both firmware versions:
+
+   ![Confirmation dialog](docs/confirm.png)
 
 The language switch is in the top right; the choice is saved in `~/.shelly2esphome.json`.
 
@@ -87,6 +96,9 @@ python3 shelly2esphome.py --help
 Set `S2E_DEBUG=1` to log every HTTP request the Shelly makes.
 
 ## ESPHome config
+
+A short, validated starting point for the Plus 2PM:
+[examples/shelly-plus-2pm.yaml](examples/shelly-plus-2pm.yaml) (two relays, two inputs).
 
 Older hardware revisions have a **single-core** ESP32 rated for **160 MHz**. A firmware
 built for dual-core or 240 MHz does not boot there. These settings run on all revisions:
@@ -174,5 +186,11 @@ Sprache oben rechts umschaltbar.
 **Wichtig für die ESPHome-Config:** `CONFIG_FREERTOS_UNICORE: y` und 160 MHz setzen
 (siehe [ESPHome config](#esphome-config)), sonst startet die Firmware auf älteren
 Single-Core-Geräten nicht. Das Tool warnt bei Multicore-Builds.
+
+Eine kurze Beispiel-Config für den Plus 2PM liegt in
+[examples/shelly-plus-2pm.yaml](examples/shelly-plus-2pm.yaml).
+
+**Getestet** unter Linux. Unter Windows ist das Tool **noch nicht getestet**, Rückmeldungen
+sind willkommen.
 
 **Achtung:** Zurück zur Shelly-Firmware geht danach nur noch seriell.

@@ -1331,7 +1331,7 @@ def run_gui():
     progress = ttk.Progressbar(prog_frm, mode="determinate", maximum=100, style="Run.Horizontal.TProgressbar")
     progress.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(px(8), 0))
     activity_lbl = tk.Label(prog_frm, bg=C["card"], fg=C["muted"], font=F["small"], anchor="nw",
-                            justify="left", wraplength=px(360))
+                            justify="left", wraplength=px(360), height=2)  # feste Höhe: kein Layoutsprung
     activity_lbl.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(px(8), 0))
 
     def show_status():
@@ -1383,6 +1383,7 @@ def run_gui():
     log_sb = ttk.Scrollbar(log_wrap, orient="vertical", command=log_box.yview, style="Log.Vertical.TScrollbar")
     log_box.configure(yscrollcommand=log_sb.set)
     log_box.pack(side="left", fill="both", expand=True)
+    log_box.bind("<Configure>", lambda e: log_box.see("end"))  # nach Layoutänderung am Ende bleiben
     log_sb.pack(side="right", fill="y")
     log_box.tag_configure("time", foreground=C["log_dim"])
     log_box.tag_configure("detail", foreground="#9aa7bd")
@@ -1402,7 +1403,7 @@ def run_gui():
             log_box.insert("end", time.strftime("%H:%M:%S  "), "time")
             log_box.insert("end", line + "\n", tag or ())
         log_box.configure(state="disabled")
-        log_box.yview_moveto(1.0)
+        log_box.see("end")
 
     def clear_log():
         log_box.configure(state="normal")

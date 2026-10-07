@@ -1,0 +1,49 @@
+# Minimal ESPHome config for a Shelly Plus 2PM (two relays, two switch inputs).
+# Pins from a Plus 2PM with PCB v0.1.9. Power metering (ADE7953) is left out to keep it short;
+# if you add it, also set "irq_pin: GPIO27", otherwise the chip can overheat.
+esphome:
+  name: shelly-plus-2pm
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      # Required: older hardware revisions are single-core and rated for 160 MHz
+      CONFIG_FREERTOS_UNICORE: y
+      CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_160: y
+      CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240: n
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap: {}            # fallback hotspot if Wi-Fi is not reachable
+
+captive_portal:
+logger:
+api:
+ota:
+  - platform: esphome
+
+switch:
+  - platform: gpio
+    id: relay_1
+    name: "Relay 1"
+    pin: GPIO13
+  - platform: gpio
+    id: relay_2
+    name: "Relay 2"
+    pin: GPIO12
+
+binary_sensor:
+  # Push buttons: on_press. For wall switches use on_state instead.
+  - platform: gpio
+    name: "Input 1"
+    pin: GPIO5
+    on_press:
+      - switch.toggle: relay_1
+  - platform: gpio
+    name: "Input 2"
+    pin: GPIO18
+    on_press:
+      - switch.toggle: relay_2
