@@ -39,7 +39,7 @@ jobs:
           dist/shelly2esphome-cli.exe --help
           dist/shelly2esphome-cli.exe --scan 127.0.0.0/30 --lang en
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v6
         with:
           name: shelly2esphome-windows
           path: dist/*
