@@ -2,8 +2,11 @@ shelly2esphome - ESPHome per OTA auf Shelly Gen2 flashen (ohne Aufschrauben)
 =============================================================================
 
 Start
-  Windows: Python 3 von python.org installieren, dann shelly2esphome.pyw doppelklicken
-           (ohne Konsolenfenster; shelly2esphome.py geht auch)
+  Windows: shelly2esphome.exe doppelklicken (kein Python nötig, Download unter
+           github.com/senfkorn/shelly2esphome/releases). SmartScreen warnt einmal:
+           "Weitere Informationen" -> "Trotzdem ausführen".
+           Mit Python 3 (python.org) geht auch shelly2esphome.pyw.
+           Kommandozeile: shelly2esphome-cli.exe
            (beim ersten Flashen die Firewall-Abfrage für private Netzwerke zulassen)
   Linux:   sudo apt install python3-tk   (nur für die GUI)
            python3 shelly2esphome.py

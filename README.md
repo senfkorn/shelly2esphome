@@ -51,6 +51,8 @@ work afterwards.
 ## Requirements
 
 - Python 3.8 or newer. Nothing else.
+  **Windows without Python:** download `shelly2esphome.exe` from the [latest release](https://github.com/senfkorn/shelly2esphome/releases/latest).
+  It is unsigned, so SmartScreen asks once: "More info" -> "Run anyway".
 - For the GUI on Linux: `sudo apt install python3-tk` (Debian/Ubuntu).
 - PC and Shelly in the same network. The Shelly downloads the firmware **from your PC**,
   so a firewall must allow incoming connections (Windows asks on first start: allow
@@ -65,7 +67,9 @@ work afterwards.
 python3 shelly2esphome.py
 ```
 
-On Windows, double-click `shelly2esphome.pyw` (no console window) or `shelly2esphome.py`.
+On Windows, double-click `shelly2esphome.exe` from the [releases](https://github.com/senfkorn/shelly2esphome/releases/latest) (no Python needed),
+or with Python installed `shelly2esphome.pyw` (no console window).
+For the command line there is `shelly2esphome-cli.exe`.
 
 1. **Device:** scan the network or type the IP address.
 2. **Firmware:** choose the ESPHome `.bin` (ESPHome dashboard -> Install -> Manual download,
@@ -158,6 +162,10 @@ rejection of compressed zips and several error scenarios (`--scenario auth`, `no
 `ignore_commit`, `reject_esphome`, `esphome_silent`, ...). The tests only talk to
 `127.0.0.1` and block any RPC to other addresses.
 
+**Releases:** pushing a tag `v*` (e.g. `git tag v1.0.1 && git push origin v1.0.1`) makes
+GitHub Actions run the tests, build both Windows exes with PyInstaller and attach them to
+the release ([.github/workflows/release.yml](.github/workflows/release.yml)).
+
 ## Credits
 
 - The package format follows [mgos32-to-tasmota32](https://github.com/tasmota/mgos32-to-tasmota32).
@@ -177,7 +185,10 @@ Use at your own risk.
 ESPHome per OTA auf Shelly Gen2 (ESP32) flashen, ohne Aufschrauben und ohne seriellen Adapter.
 
 **Start**
-- Windows: Python 3 von python.org installieren, `shelly2esphome.pyw` doppelklicken (ohne Konsolenfenster).
+- Windows: `shelly2esphome.exe` aus dem [neuesten Release](https://github.com/senfkorn/shelly2esphome/releases/latest) laden und doppelklicken, Python ist nicht nötig.
+  SmartScreen warnt einmal (nicht signiert): „Weitere Informationen“ -> „Trotzdem ausführen“.
+  Alternativ mit Python 3 von python.org: `shelly2esphome.pyw` doppelklicken.
+  Für die Kommandozeile gibt es `shelly2esphome-cli.exe`.
   Beim ersten Flashen die Firewall-Abfrage für *private Netzwerke* zulassen.
 - Linux: `sudo apt install python3-tk` (nur für die GUI), dann `python3 shelly2esphome.py`.
 
