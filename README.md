@@ -18,7 +18,7 @@ Windows and Linux.
 
 | Model       | Status   |
 |-------------|----------|
-| Plus 2PM    | tested (Shelly FW 1.7.5 -> ESPHome 2026.9.1) |
+| Plus 2PM    | tested (Shelly FW 1.7.1 and 1.7.5 -> ESPHome 2026.9.1) |
 | Plus 1      | untested, same partition table |
 | Plus 1PM    | untested, same partition table |
 | Plus I4     | untested, same partition table |
@@ -30,7 +30,7 @@ The Mini series (ESP32-C3) and Gen3/Gen4 devices are **not** supported.
 | Platform | Status |
 |----------|--------|
 | Linux    | tested (GUI and command line) |
-| Windows  | **not tested yet**, feedback welcome |
+| Windows  | tested (Windows 11, Python 3.12, GUI) |
 
 ## How it works
 
@@ -64,6 +64,8 @@ work afterwards.
 ```bash
 python3 shelly2esphome.py
 ```
+
+On Windows, double-click `shelly2esphome.pyw` (no console window) or `shelly2esphome.py`.
 
 1. **Device:** scan the network or type the IP address.
 2. **Firmware:** choose the ESPHome `.bin` (ESPHome dashboard -> Install -> Manual download,
@@ -175,7 +177,7 @@ Use at your own risk.
 ESPHome per OTA auf Shelly Gen2 (ESP32) flashen, ohne Aufschrauben und ohne seriellen Adapter.
 
 **Start**
-- Windows: Python 3 von python.org installieren, `shelly2esphome.py` doppelklicken.
+- Windows: Python 3 von python.org installieren, `shelly2esphome.pyw` doppelklicken (ohne Konsolenfenster).
   Beim ersten Flashen die Firewall-Abfrage für *private Netzwerke* zulassen.
 - Linux: `sudo apt install python3-tk` (nur für die GUI), dann `python3 shelly2esphome.py`.
 
@@ -190,7 +192,6 @@ Single-Core-Geräten nicht. Das Tool warnt bei Multicore-Builds.
 Eine kurze Beispiel-Config für den Plus 2PM liegt in
 [examples/shelly-plus-2pm.yaml](examples/shelly-plus-2pm.yaml).
 
-**Getestet** unter Linux. Unter Windows ist das Tool **noch nicht getestet**, Rückmeldungen
-sind willkommen.
+**Getestet** unter Linux und Windows 11.
 
 **Achtung:** Zurück zur Shelly-Firmware geht danach nur noch seriell.

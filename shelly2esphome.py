@@ -211,6 +211,7 @@ TEXTS = {
                    "Weiter auf der Kommandozeile.\n",
                    "No GUI available (on Linux: sudo apt install python3-tk). "
                    "Continuing on the command line.\n"),
+    "cli_scan_none": ("Keine Shellys (ab Gen2) in {net} gefunden.", "No Shellys (Gen2 or newer) found in {net}."),
     "cli_aborted": ("Abgebrochen.", "Cancelled."),
     "arg_desc": ("ESPHome per OTA auf Shelly Gen2 flashen", "Flash ESPHome over the air onto Shelly Gen2"),
     "arg_ip": ("IP-Adresse des Shelly", "IP address of the Shelly"),
@@ -1807,8 +1808,11 @@ def main():
     args = ap.parse_args()
 
     if args.scan:
-        for ip, info in sorted(scan_network(args.scan), key=lambda x: ipaddress.ip_address(x[0])):
+        found = scan_network(args.scan)
+        for ip, info in sorted(found, key=lambda x: ipaddress.ip_address(x[0])):
             print(f"{ip:15}  {describe_shelly(info)}")
+        if not found:
+            print(T("cli_scan_none", net=args.scan))
         return
 
     if not args.cli and not args.ip and not args.firmware:
