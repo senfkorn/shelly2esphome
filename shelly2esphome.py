@@ -536,8 +536,8 @@ def build_package(shelly_zip, fw):
 
 
 def app_dir():
-    if getattr(sys, "frozen", False):  # PyInstaller
-        return getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+    if getattr(sys, "frozen", False):  # PyInstaller: firmware/ liegt neben der .exe
+        return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.abspath(__file__))
 
 

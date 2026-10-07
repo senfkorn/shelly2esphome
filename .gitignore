@@ -5,3 +5,7 @@ esphome-*.zip
 *.bin
 # Shelly-Firmware nicht weiterverteilen (wird bei Bedarf geladen)
 firmware/
+# PyInstaller
+build/
+dist/
+*.spec
