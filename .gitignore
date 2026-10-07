@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+# gebaute Pakete und eigene Firmware
+esphome-*.zip
+*.bin
+# Shelly-Firmware nicht weiterverteilen (wird bei Bedarf geladen)
+firmware/

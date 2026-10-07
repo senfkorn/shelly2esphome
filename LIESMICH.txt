@@ -1,0 +1,44 @@
+shelly2esphome - ESPHome per OTA auf Shelly Gen2 flashen (ohne Aufschrauben)
+=============================================================================
+
+Start
+  Windows: Python 3 von python.org installieren, dann shelly2esphome.py doppelklicken
+           (beim ersten Flashen die Firewall-Abfrage für private Netzwerke zulassen)
+  Linux:   sudo apt install python3-tk   (nur für die GUI)
+           python3 shelly2esphome.py
+
+Bedienung (GUI)
+  1. "Netz durchsuchen" oder IP des Shelly eintragen
+  2. ESPHome-Firmware auswählen (ESPHome-Dashboard -> Install -> Manual download,
+     am besten "Factory format")
+  3. "Prüfen", dann "ESPHome flashen"
+
+Kommandozeile
+  python3 shelly2esphome.py 192.168.1.50 firmware.factory.bin
+  python3 shelly2esphome.py --scan 192.168.1.0/24
+  python3 shelly2esphome.py --help
+
+Sprache / Language
+  Deutsch oder Englisch, automatisch nach Systemsprache. In der GUI oben rechts
+  umschaltbar (wird in ~/.shelly2esphome.json gemerkt), auf der Kommandozeile
+  mit --lang de bzw. --lang en.
+
+Unterstützte Shellys
+  Plus2PM (getestet), Plus1, Plus1PM, PlusI4, PlusPlugS, PlusUni (ungetestet)
+  Die Mini-Serie (ESP32-C3) wird nicht unterstützt.
+
+ESPHome-Config: diese Optionen setzen, sonst bootet die Firmware auf alten
+Single-Core-Geräten nicht:
+  esp32:
+    framework:
+      type: esp-idf
+      sdkconfig_options:
+        CONFIG_FREERTOS_UNICORE: y
+        CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_160: y
+        CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240: n
+
+Achtung: Zurück zur Shelly-Firmware geht danach nur noch seriell.
+
+Shelly-Firmware 1.3.3 (für das Downgrade): wird bei Bedarf von rojer.me geladen
+und per SHA-256 geprüft. Offline: Dateien <Modell>-1.3.3.zip in den Ordner firmware/
+neben dem Skript legen.
