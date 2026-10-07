@@ -1,0 +1,58 @@
+# Baut die Windows-EXEs und hängt sie ans Release.
+# - Tag v* pushen: Release anlegen (falls nicht vorhanden) und EXEs hochladen
+# - Manuell starten (workflow_dispatch): nur bauen, EXEs als Actions-Artefakt
+name: Windows-Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Tests
+        run: python dev/test_shelly2esphome.py
+
+      - name: EXEs bauen
+        run: |
+          python -m pip install pyinstaller
+          python -m PyInstaller --noconfirm --onefile --windowed --name shelly2esphome shelly2esphome.pyw
+          python -m PyInstaller --noconfirm --onefile --console --name shelly2esphome-cli shelly2esphome.py
+          cd dist && sha256sum *.exe > SHA256SUMS.txt && cat SHA256SUMS.txt
+
+      - name: Smoke-Test
+        run: |
+          dist/shelly2esphome-cli.exe --help
+          dist/shelly2esphome-cli.exe --scan 127.0.0.0/30 --lang en
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shelly2esphome-windows
+          path: dist/*
+
+      - name: Release anlegen bzw. Dateien hochladen
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/shelly2esphome.exe dist/shelly2esphome-cli.exe dist/SHA256SUMS.txt --clobber
+          else
+            gh release create "$TAG" dist/shelly2esphome.exe dist/shelly2esphome-cli.exe dist/SHA256SUMS.txt \
+              --title "$TAG" --generate-notes
+          fi
