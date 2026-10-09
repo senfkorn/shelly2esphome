@@ -1,0 +1,60 @@
+name: Gen3 / Gen4 experimental test
+description: Report a preflight or hardware test, including unsuccessful attempts.
+title: '[Experimental] '
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please read [the testing guide](https://github.com/senfkorn/shelly2esphome/blob/main/docs/EXPERIMENTAL.md).
+        Attach the diagnostic JSON. Do not attach firmware, Wi-Fi credentials or raw device logs.
+        Reports are public. Nothing is uploaded automatically by the tool.
+  - type: input
+    id: model
+    attributes:
+      label: Model and hardware revision
+      placeholder: PlugSG3, revision printed on the device
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Tool commit, stock firmware and ESPHome versions
+    validations:
+      required: true
+  - type: dropdown
+    id: stage
+    attributes:
+      label: Last completed stage
+      options:
+        - Read-only diagnosis
+        - Preflight / ZIP built
+        - Conversion attempted
+        - ESPHome API connected
+        - Reboot and two subsequent OTA updates completed
+    validations:
+      required: true
+  - type: textarea
+    id: results
+    attributes:
+      label: Hardware results
+      description: Mark each as passed, failed or not tested. Both OTA tests must install distinct new builds and reboot successfully.
+      value: |
+        First boot / authenticated ESPHome API connection:
+        Reboot (or power cycle):
+        OTA update 1:
+        OTA update 2:
+        Relays, inputs, power measurement and temperature (if configured):
+        Serial recovery needed:
+  - type: textarea
+    id: report
+    attributes:
+      label: Diagnostic JSON
+      description: Attach the exported JSON, including blocked/error attempts. Review it before posting. No BIN/ZIP/YAML or raw logs.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Observations
+      description: What happened? Remove names, addresses, passwords and tokens from any text you include.

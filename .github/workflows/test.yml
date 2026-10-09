@@ -1,0 +1,18 @@
+name: Tests
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - run: python dev/test_shelly2esphome.py
+      - run: python dev/test_experimental.py
+      - run: python shelly2esphome.py --help

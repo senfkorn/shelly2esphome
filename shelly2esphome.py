@@ -1375,6 +1375,10 @@ def run_gui():
     log_head, logc = card(0, "card_log", row=2, column=0, columnspan=2, sticky="nsew", pady=(pad, 0))
     clear_btn = bind_text(ttk.Button(log_head, style="Small.TButton"), "btn_clear")
     clear_btn.pack(side="right")
+    # Separate opt-in path: never reuse the Gen2 embedded bootloader/downgrade.
+    experimental_btn = ttk.Button(log_head, text="Gen3 / Gen4 (experimental)", style="Small.TButton",
+                                  command=lambda: __import__("experimental").run_gui(sys.modules[__name__], root))
+    experimental_btn.pack(side="right", padx=px(8))
     log_wrap = tk.Frame(logc, bg=C["log_bg"])
     log_wrap.pack(fill="both", expand=True)
     log_box = tk.Text(log_wrap, height=8, bg=C["log_bg"], fg=C["log_text"], font=F["mono"], wrap="word",
@@ -1503,7 +1507,7 @@ def run_gui():
         return result["ok"]
 
     # ================================================================ Ablauf
-    action_widgets = [scan_btn, fw_btn, check_btn, save_btn, flash_btn]
+    action_widgets = [scan_btn, fw_btn, check_btn, save_btn, flash_btn, experimental_btn]
 
     def set_busy(busy):
         state["busy"] = busy
@@ -1751,6 +1755,9 @@ def run_gui():
 # ---------------------------------------------------------------- CLI
 
 def run_cli(args):
+    if args.experimental or args.diagnose:
+        import experimental
+        return experimental.run_cli(sys.modules[__name__], args)
     ui = UI()
     if not args.ip:
         args.ip = input(T("cli_ask_ip")).strip()
@@ -1758,6 +1765,10 @@ def run_cli(args):
         args.firmware = input(T("cli_ask_fw")).strip().strip('"')
     fw = Firmware(args.firmware, args.bootloader)
     info, shelly_zip, package = prepare(args.ip, fw, ui, args.shelly_zip)
+
+    if args.check:
+        ui.log(T("log_ready"), "ok")
+        return
 
     if args.build_only:
         name = f"esphome-{fw.desc['project']}-{info['app']}.zip"
@@ -1805,7 +1816,23 @@ def main():
     ap.add_argument("-y", "--yes", action="store_true", help=T("arg_yes"))
     ap.add_argument("--allow-multicore", action="store_true", help=T("arg_multicore"))
     ap.add_argument("--lang", choices=LANGUAGES, help=T("arg_lang"))
+    ap.add_argument("--experimental", action="store_true", help="Opt-in Gen3/Gen4 (PlugSG3, S2PMG4); see docs/EXPERIMENTAL.md")
+    ap.add_argument("--diagnose", action="store_true", help="Read-only device diagnosis; no firmware required")
+    ap.add_argument("--check", action="store_true", help="Read-only preflight; never flash")
+    ap.add_argument("--report", metavar="JSON", help="Export whitelist-only experimental diagnostic report, including failures")
+    ap.add_argument("--test-result", action="append", default=[], metavar="TEST=RESULT", help="Manual result: boot/reboot/ota1/ota2/functions=passed/failed/unknown")
+    ap.add_argument("--export-partitions", metavar="CSV", help="Experimental: export full stock partition table for ESPHome")
     args = ap.parse_args()
+    if args.report and not (args.experimental or args.diagnose):
+        ap.error("--report requires --experimental or --diagnose")
+    if args.test_result and not args.report:
+        ap.error("--test-result requires --report")
+    if args.experimental and (args.bootloader or args.allow_multicore):
+        ap.error("Experimental requires factory BIN; Gen2 bootloader/multicore overrides are not supported")
+    if args.export_partitions and not args.experimental:
+        ap.error("--export-partitions requires --experimental")
+    if sum(bool(v) for v in (args.check, args.build_only, args.diagnose, args.export_partitions)) > 1:
+        ap.error("Choose one of --check, --build-only, --diagnose, --export-partitions")
 
     if args.scan:
         found = scan_network(args.scan)
@@ -1815,7 +1842,7 @@ def main():
             print(T("cli_scan_none", net=args.scan))
         return
 
-    if not args.cli and not args.ip and not args.firmware:
+    if not args.cli and not args.ip and not args.firmware and not (args.experimental or args.diagnose or args.check):
         try:
             import tkinter  # noqa: F401
         except ImportError:

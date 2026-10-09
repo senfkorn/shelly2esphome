@@ -3,7 +3,7 @@
 Flash **ESPHome over the air** onto Shelly Gen2 (ESP32) devices that still run the original
 Shelly firmware. No need to open the case, no serial adapter, no soldering.
 
-One Python file, standard library only. GUI and command line, English and German,
+Python standard library only. GUI and command line, English and German,
 Windows and Linux.
 
 *Deutsche Kurzanleitung: [weiter unten](#deutsch).*
@@ -25,7 +25,14 @@ Windows and Linux.
 | Plus Plug S | untested, same partition table |
 | Plus Uni    | untested, same partition table |
 
-The Mini series (ESP32-C3) and Gen3/Gen4 devices are **not** supported.
+The Gen2 Mini series (ESP32-C3) is not supported.
+
+**Gen3 / Gen4 experimental:** separate opt-in profiles for Plug S Gen3 (`PlugSG3`) and
+2PM Gen4 (`S2PMG4`), with read-only preflight, stock-layout CSV export and privacy-preserving
+diagnostic reports. **No hardware validation yet.** See the bilingual
+[testing guide](docs/EXPERIMENTAL.md) before testing or
+[report a test](https://github.com/senfkorn/shelly2esphome/issues/new?template=experimental-test.yml).
+The existing v1.0.0 binaries contain only Gen2 support; use current source or a newly built artifact.
 
 | Platform | Status |
 |----------|--------|

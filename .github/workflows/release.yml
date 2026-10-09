@@ -1,10 +1,11 @@
 # Baut die Windows-EXEs und hängt sie ans Release.
 # - Tag v* pushen: Release anlegen (falls nicht vorhanden) und EXEs hochladen
-# - Manuell starten (workflow_dispatch): nur bauen, EXEs als Actions-Artefakt
+# - main-Push oder manuell: EXEs als Actions-Artefakt, kein Release
 name: Windows-Release
 
 on:
   push:
+    branches: ["main"]
     tags: ["v*"]
   workflow_dispatch:
 
@@ -25,7 +26,9 @@ jobs:
           python-version: "3.12"
 
       - name: Tests
-        run: python dev/test_shelly2esphome.py
+        run: |
+          python dev/test_shelly2esphome.py
+          python dev/test_experimental.py
 
       - name: EXEs bauen
         run: |

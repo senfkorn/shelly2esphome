@@ -9,3 +9,5 @@ firmware/
 build/
 dist/
 *.spec
+# local scratch/test artifacts
+work/
