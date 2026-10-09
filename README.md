@@ -1,120 +1,125 @@
 # shelly2esphome
 
-Flash **ESPHome over the air** onto Shelly Gen2 (ESP32) devices that still run the original
-Shelly firmware. No need to open the case, no serial adapter, no soldering.
+Convert Shelly devices running the original firmware to **ESPHome over the air**.
+Gen2 uses the existing conversion flow; selected Gen3 and Gen4 devices have a separate,
+explicitly enabled **experimental** flow with preflight checks and diagnostic reports.
 
-Python standard library only. GUI and command line, English and German,
-Windows and Linux.
+Python standard library only, GUI and CLI, Windows and Linux. No serial adapter is needed
+for the conversion itself. Failed conversions or unsuitable ESPHome builds may require
+serial recovery.
 
-*Deutsche Kurzanleitung: [weiter unten](#deutsch).*
+[Device support](#device-support) · [Download](#download-and-requirements) ·
+[Gen2 guide](#gen2-conversion) · [Gen3 / Gen4 guide](#gen3--gen4-experimental-conversion) ·
+[CLI options](#cli-reference) · [Test reports](#testing-and-feedback) · [Deutsch](#deutsch)
 
-![shelly2esphome GUI after a successful flash](docs/screenshot.png)
+> Converting replaces the manufacturer's firmware. Returning to Shelly firmware normally
+> requires a serial adapter. Gen3/Gen4 profiles have **not been validated on physical
+> hardware by this project**. A listening ESPHome API port alone does not prove that the
+> new bootloader, device functions or future OTA updates work.
 
-> **Warning:** Once flashed, there is no way back to the Shelly firmware except via a
-> serial adapter. A broken ESPHome build (wrong board settings, no Wi-Fi credentials)
-> also means serial recovery. Read [ESPHome config](#esphome-config) first.
+![Gen2 GUI after a successful conversion](docs/screenshot.png)
 
-## Supported devices
+## Device support
 
-| Model       | Status   |
-|-------------|----------|
-| Plus 2PM    | tested (Shelly FW 1.7.1 and 1.7.5 -> ESPHome 2026.9.1) |
-| Plus 1      | untested, same partition table |
-| Plus 1PM    | untested, same partition table |
-| Plus I4     | untested, same partition table |
-| Plus Plug S | untested, same partition table |
-| Plus Uni    | untested, same partition table |
+Support applies to the individual model, not to an entire generation.
 
-The Gen2 Mini series (ESP32-C3) is not supported.
+| Generation | Model / profile | Chip | Status |
+|------------|-----------------|------|--------|
+| Gen2 | Plus 2PM (`Plus2PM`) | ESP32 | Hardware tested: stock 1.7.1 / 1.7.5 → ESPHome 2026.9.1 |
+| Gen2 | Plus 1, Plus 1PM, Plus I4, Plus Plug S, Plus Uni | ESP32 | Untested; included in the existing Gen2 flow |
+| Gen3 | Plug S Gen3 (`PlugSG3`) | ESP32-C3, 8 MB | Experimental profile; no hardware validation yet |
+| Gen4 | 2PM Gen4 (`S2PMG4`) | ESP32-C6, 8 MB | Experimental profile; no hardware validation yet |
+| Other | Gen2 Mini series and other models | Various | No conversion profile; unknown models can supply read-only diagnosis |
 
-**Gen3 / Gen4 experimental:** separate opt-in profiles for Plug S Gen3 (`PlugSG3`) and
-2PM Gen4 (`S2PMG4`), with read-only preflight, stock-layout CSV export and privacy-preserving
-diagnostic reports. **No hardware validation yet.** See the bilingual
-[testing guide](docs/EXPERIMENTAL.md) before testing or
-[report a test](https://github.com/senfkorn/shelly2esphome/issues/new?template=experimental-test.yml).
-The existing v1.0.0 binaries contain only Gen2 support; use current source or a newly built artifact.
+**Tested** means a real device was tested, not merely that automated tests passed.
+Experimental profiles remain experimental until actual conversion, reboot, device-function
+and subsequent OTA results have been reviewed. No automatic promotion takes place.
 
-| Platform | Status |
-|----------|--------|
-| Linux    | tested (GUI and command line) |
-| Windows  | tested (Windows 11, Python 3.12, GUI) |
+The GUI and Gen2 flow have been used on Linux and Windows 11. Automated tests run on both
+Linux and Windows; this does not establish Gen3/Gen4 hardware compatibility.
 
-## How it works
+## Download and requirements
 
-1. Checks the Shelly (Gen2, no password, supported model) and the firmware
-   (valid ESP32 image, checksum, SHA-256, size, single/multi-core build).
-2. Downgrades the Shelly to stock firmware 1.3.3, whose updater installs the package format
-   below (including the bootloader). 1.3.3 boots "uncommitted" and rolls back after ~25 s,
-   so the tool confirms it with `OTA.Commit` right away and verifies it with a reboot.
-3. Builds an update package in Shelly's format: ESPHome bootloader + Shelly partition table
-   + ESPHome app. The zip **must be stored uncompressed**, otherwise the Shelly silently
-   rejects it.
-4. Serves both packages from a built-in HTTP server, starts `Shelly.Update` and waits until
-   the ESPHome API port (6053) answers.
+### Windows without Python
 
-The partition table stays Shelly's (2 x 1.5 MB OTA slots), so normal ESPHome OTA updates
-work afterwards.
+- **Gen2:** download `shelly2esphome.exe` from the [latest release](https://github.com/senfkorn/shelly2esphome/releases/latest).
+- **Gen3/Gen4 testing:** use a current Windows build from [Windows-Release Actions](https://github.com/senfkorn/shelly2esphome/actions/workflows/release.yml).
+  Open a successful run for `main`, scroll to **Artifacts**, download `shelly2esphome-windows`
+  and extract it. GitHub artifact downloads require signing in.
+  [First successful build containing experimental support](https://github.com/senfkorn/shelly2esphome/actions/runs/37917265535).
+- `shelly2esphome.exe` opens the GUI; `shelly2esphome-cli.exe` provides the CLI.
+  `SHA256SUMS.txt` contains checksums. The executables are unsigned; Windows SmartScreen
+  may require “More info” → “Run anyway”.
 
-## Requirements
+**The v1.0.0 release binaries do not contain experimental support.** Builds from `main`
+are testing artifacts, not a new stable release.
 
-- Python 3.8 or newer. Nothing else.
-  **Windows without Python:** download `shelly2esphome.exe` from the [latest release](https://github.com/senfkorn/shelly2esphome/releases/latest).
-  It is unsigned, so SmartScreen asks once: "More info" -> "Run anyway".
-- For the GUI on Linux: `sudo apt install python3-tk` (Debian/Ubuntu).
-- PC and Shelly in the same network. The Shelly downloads the firmware **from your PC**,
-  so a firewall must allow incoming connections (Windows asks on first start: allow
-  "Private networks").
-- The Shelly must not have a password set (disable it in the Shelly web UI first).
+### Run from source
 
-## Usage
+Python 3.8 or newer; no pip packages are needed. Clone the repository or extract the
+[complete source ZIP](https://github.com/senfkorn/shelly2esphome/archive/refs/heads/main.zip).
+Keep `shelly2esphome.py`, `shelly2esphome.pyw` and `experimental.py` together.
+
+```bash
+git clone https://github.com/senfkorn/shelly2esphome.git
+cd shelly2esphome
+python shelly2esphome.py
+```
+
+On Linux, use `python3` and install Tk for the GUI, for example `sudo apt install python3-tk`.
+On Windows with Python installed, double-click `shelly2esphome.pyw` to open the GUI without
+an additional console window.
+
+### Network and firmware
+
+- PC and device must be reachable on the same network. The device downloads the package
+  **from the PC**; allow incoming HTTP connections through the PC firewall.
+- Password-protected Shelly RPC is not supported. The tool does not disable authentication.
+- The ESPHome build must include working Wi-Fi, `api:` and `ota:` with the ESPHome platform.
+  An appropriate fallback access point is useful if Wi-Fi does not reconnect.
+- Experimental flashing also needs incoming UDP logs from the device. Devices with enhanced
+  security requiring HTTPS update transport are blocked; security settings are not disabled.
+- A firmware ZIP or BIN can contain compiled credentials. Never attach these files to a
+  public issue.
+
+## Gen2 conversion
 
 ### GUI
 
-```bash
-python3 shelly2esphome.py
-```
+1. Scan the network or enter the Shelly IP address in the main window.
+2. Select an ESPHome BIN: ESPHome dashboard → Install → Manual download.
+   **Factory format** is recommended; OTA format is also accepted for Gen2.
+3. Choose **Check** to read the device information, validate the firmware and build the
+   package without changing the device. **Save ZIP** saves the package locally.
+4. Choose **Flash ESPHome**, review the device and firmware details, and confirm.
+5. The tool performs the stock downgrade if needed, installs ESPHome and checks port 6053.
+   Then connect through ESPHome / Home Assistant and check the actual device functions.
 
-On Windows, double-click `shelly2esphome.exe` from the [releases](https://github.com/senfkorn/shelly2esphome/releases/latest) (no Python needed),
-or with Python installed `shelly2esphome.pyw` (no console window).
-For the command line there is `shelly2esphome-cli.exe`.
+![Gen2 confirmation dialog](docs/confirm.png)
 
-1. **Device:** scan the network or type the IP address.
-2. **Firmware:** choose the ESPHome `.bin` (ESPHome dashboard -> Install -> Manual download,
-   preferably *Factory format*).
-3. **Flash:** "Check", then "Flash ESPHome". A confirmation dialog shows device, model and
-   both firmware versions:
+The top-right language switch selects English or German. Its setting is saved in
+`~/.shelly2esphome.json`. The main Gen2 controls do not enable experimental profiles.
 
-   ![Confirmation dialog](docs/confirm.png)
-
-The language switch is in the top right; the choice is saved in `~/.shelly2esphome.json`.
-
-### Command line
+### CLI
 
 ```bash
-python3 shelly2esphome.py 192.168.1.50 firmware.factory.bin
-python3 shelly2esphome.py --scan 192.168.1.0/24
-python3 shelly2esphome.py --help
+# Read-only preflight
+python shelly2esphome.py --cli 192.168.1.50 firmware.factory.bin --check
+
+# Build a ZIP locally, without changing the device
+python shelly2esphome.py --cli 192.168.1.50 firmware.factory.bin --build-only
+
+# Convert after interactive confirmation
+python shelly2esphome.py --cli 192.168.1.50 firmware.factory.bin
 ```
 
-| Option | Meaning |
-|--------|---------|
-| `--scan NET` | list Shellys in a network |
-| `--build-only` | only build and save the package |
-| `-y` | do not ask (a multi-core build additionally needs `--allow-multicore`) |
-| `--lang de\|en` | language, default: system language |
-| `--port N` | fixed port for the HTTP server (default: random) |
-| `--shelly-zip FILE` | own copy of the Shelly 1.3.3 firmware |
-| `--bootloader FILE` | custom bootloader (only for OTA-format firmware) |
+### Gen2 firmware settings
 
-Set `S2E_DEBUG=1` to log every HTTP request the Shelly makes.
+A starting configuration for the Plus 2PM is provided in
+[examples/shelly-plus-2pm.yaml](examples/shelly-plus-2pm.yaml): two relays and two inputs.
+It is not a complete implementation of all factory features or protection functions.
 
-## ESPHome config
-
-A short, validated starting point for the Plus 2PM:
-[examples/shelly-plus-2pm.yaml](examples/shelly-plus-2pm.yaml) (two relays, two inputs).
-
-Older hardware revisions have a **single-core** ESP32 rated for **160 MHz**. A firmware
-built for dual-core or 240 MHz does not boot there. These settings run on all revisions:
+Older revisions have a **single-core ESP32 rated for 160 MHz**. Use compatible settings:
 
 ```yaml
 esp32:
@@ -127,89 +132,255 @@ esp32:
       CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ_240: n
 ```
 
-The tool detects a firmware built without `CONFIG_FREERTOS_UNICORE` and warns prominently.
-It cannot detect the CPU frequency setting.
+The tool warns about builds without the single-core setting. It cannot detect the CPU
+frequency. These Gen2 settings and the bundled Gen2 bootloader do not apply to C3/C6 devices.
 
-Also make sure the config has working Wi-Fi credentials (and ideally `ap:` plus
-`captive_portal:` as a fallback) and `ota:`, otherwise the device is unreachable after
-flashing.
+For a Gen2 factory BIN, the build's bootloader is extracted. For an OTA BIN, the bundled
+ESPHome 2026.9.1 bootloader is used unless `--bootloader` supplies another one.
 
-Firmware formats:
-- **Factory format** (recommended): the bootloader from your build is used.
-- **OTA format**: a bundled ESPHome 2026.9.1 bootloader (single-core, tested) is used.
+### Gen2 stock firmware and update flow
 
-## Shelly stock firmware 1.3.3
+The converter checks the image, checksum, SHA-256 and app size, then builds a **stored,
+uncompressed ZIP** containing the ESPHome app and bootloader with the Shelly partition table.
 
-The tool needs Shelly firmware 1.3.3 for the downgrade. It is **not included** in this
-repository; the tool downloads it from `http://rojer.me/files/shelly/stock/1.3.3/` when needed.
-For offline use, put the files into `firmware/` next to the script (`<Model>-1.3.3.zip`) or pass
-`--shelly-zip`. Every file is checked against a SHA-256 hash built into the tool.
+It downloads stock **1.3.3** from `http://rojer.me/files/shelly/stock/1.3.3/` as needed,
+checks a built-in SHA-256 pin, downgrades the device, calls `OTA.Commit` to prevent rollback,
+and verifies the downgrade with a reboot. It then serves the conversion package through a
+local HTTP server and calls `Shelly.Update`.
+
+For offline use, put `<Model>-1.3.3.zip` into `firmware/` beside the script or supply
+`--shelly-zip`. Stock firmware is not included in this repository.
+The Gen2 layout retains two 1.5 MB OTA slots for subsequent ESPHome updates.
+
+## Gen3 / Gen4 experimental conversion
+
+This is a separate opt-in flow for **PlugSG3** and **S2PMG4**. It does not use the Gen2
+1.3.3 downgrade or the embedded ESP32 bootloader. Read the
+[detailed experimental guide](docs/EXPERIMENTAL.md) before a hardware test.
+
+### GUI workflow
+
+1. Open **Gen3 / Gen4 (experimental)** from the main window.
+2. Enter the device IP and choose **Diagnose**. No firmware is needed; this only reads
+   device information. Unknown models can use this step too.
+3. Select an **official stock ZIP matching the exact model and currently installed
+   firmware version**. The tool does not download Gen3/Gen4 stock firmware or authenticate
+   the selected archive independently; obtain it from an official source.
+4. Choose **Export CSV** to export the complete stock partition layout for your ESPHome build.
+5. Build ESPHome for the correct chip and layout, then select the resulting **factory BIN**.
+6. Choose **Preflight**. This checks chip, image checksums, matching stock version,
+   partition layout, app size, flash settings, silicon revision constraints and update transport.
+   It does not change the device. **Save ZIP** also leaves the device unchanged.
+7. Choose **Flash (experimental)** only after reviewing the checks and recovery requirements.
+   The tool probes the target slot before issuing the update.
+8. Keep the window open, perform the hardware tests below, enter the results and choose
+   **Export diagnostic JSON / Diagnose exportieren**. Attach the report yourself to a test issue.
+
+### CLI workflow
+
+Replace `DEVICE_IP` with the device address. Examples use separate reports so an earlier
+attempt is not overwritten.
+
+```bash
+# Diagnosis: no firmware and no device writes
+python shelly2esphome.py --cli DEVICE_IP --diagnose --report diagnosis.json
+
+# Export the full stock layout before building ESPHome
+python shelly2esphome.py --cli DEVICE_IP --experimental --shelly-zip stock.zip --export-partitions stock-partitions.csv --report layout.json
+
+# Validate a factory BIN without changing the device
+python shelly2esphome.py --cli DEVICE_IP firmware.factory.bin --experimental --shelly-zip stock.zip --check --report preflight.json
+
+# Build the conversion ZIP locally
+python shelly2esphome.py --cli DEVICE_IP firmware.factory.bin --experimental --shelly-zip stock.zip --build-only --report package.json
+
+# Convert: interactive confirmation requires typing FLASH
+python shelly2esphome.py --cli DEVICE_IP firmware.factory.bin --experimental --shelly-zip stock.zip --report conversion.json
+```
+
+`--yes` explicitly skips the interactive confirmation. It does not bypass chip, layout,
+security or target-slot guards. `--check`, `--build-only`, `--diagnose` and
+`--export-partitions` are mutually exclusive modes.
+
+### Experimental firmware settings
+
+Use **ESP-IDF**, the correct **8 MB C3/C6 target**, and the complete CSV exported from
+that device's matching stock ZIP. For PlugSG3:
+
+```yaml
+esp32:
+  board: esp32-c3-devkitm-1
+  variant: ESP32C3
+  flash_size: 8MB
+  partitions: stock-partitions.csv
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_PARTITION_TABLE_OFFSET: '0x10000'
+    advanced:
+      enable_ota_rollback: false
+api:
+ota:
+  - platform: esphome
+```
+
+For **S2PMG4**, change the board to `esp32-c6-devkitm-1` and the variant to `ESP32C6`.
+These are build settings, **not a complete device configuration**. Add Wi-Fi, the actual
+GPIO assignments and any required temperature/power protections; validate those separately.
+
+The expected offsets are bootloader `0x0`, partition table `0x10000`, OTA data `0x11000`
+and app `0x20000`. App slots are `0x2a0000` bytes for PlugSG3 and `0x300000` bytes for
+S2PMG4. Both OTA slots and **all** data partitions must match the stock table exactly.
+A generic ESPHome layout, an OTA-only BIN or a Gen2 bootloader is rejected.
+
+### Slot and bootloader guards
+
+After confirmation, the tool temporarily changes the device's UDP debug destination and
+reads only `Storing core dumps to app_0` / `app_1` indications from that device's IP.
+It restores and verifies the old UDP destination **before** starting the update.
+Only an unambiguous **target slot 0** is accepted; `GetDeviceInfo.slot` alone is insufficient.
+
+If the target is slot 1, use the official Shelly procedure to update/reinstall stock firmware
+and try again. There is no automatic slot switch, forced override or security downgrade.
+If UDP logging cannot identify the slot, the tool stops before flashing.
+
+The package preserves the stock data parts and replaces the bootloader/app. It uses the
+public experimental conversion approach with `boot.min_version` set to `1.0.9`.
+Unknown or higher stock bootloader minima, signed/encrypted images and incompatible layouts
+are blocked. **Bootloader replacement is not independently verified on hardware.**
+
+## CLI reference
+
+Use `shelly2esphome-cli.exe` instead of `python shelly2esphome.py` when using the Windows binary.
+
+| Option | Meaning / scope |
+|--------|-----------------|
+| `--cli` | Use the command line instead of launching the GUI |
+| `--scan NET` | Discover Shellys on a network; discovery does not imply conversion support |
+| `--check` | Read-only preflight and package validation |
+| `--build-only` | Save a conversion package locally; no device changes |
+| `--experimental` | Explicitly enable the PlugSG3 / S2PMG4 conversion profiles |
+| `--diagnose` | Read-only device diagnosis, including unknown models; no firmware required |
+| `--export-partitions CSV` | Export the full stock table; requires `--experimental` and `--shelly-zip` |
+| `--shelly-zip FILE` | Gen2: pinned 1.3.3 archive; experimental: official archive matching current model/version |
+| `--report JSON` | Save an experimental/diagnosis report, including failed attempts |
+| `--test-result TEST=RESULT` | Add manual results to that report; details below |
+| `-y`, `--yes` | Skip confirmation; Gen2 multicore builds also require `--allow-multicore` |
+| `--allow-multicore` | Gen2 only; accept the multicore warning noninteractively |
+| `--bootloader FILE` | Gen2 custom bootloader; experimental flow requires the factory BIN's bootloader |
+| `--port N` | Local HTTP-server port; default is a random available port |
+| `--lang de\|en` | Main GUI/CLI language; experimental controls/help also contain English text |
+
+Set `S2E_DEBUG=1` for detailed local HTTP logging. Those logs are not the diagnostic report
+and may expose local addresses or identifiers. Do not post them without reviewing/redacting them.
+
+## Testing and feedback
+
+A successful conversion needs more evidence than an open TCP port. Please test and record:
+
+1. First boot and an actual ESPHome API connection.
+2. Reboot or power cycle, followed by reconnection.
+3. A normal ESPHome OTA update to a **different build**, followed by reboot and reconnection.
+4. A second OTA update to another **different build**, followed by reboot and reconnection.
+5. Configured relays, inputs, power/temperature measurements and protection functions.
+
+The converter does not perform these follow-up hardware tests automatically.
+In the experimental GUI, enter `passed`, `failed` or `unknown` for `boot`, `reboot`,
+`ota1`, `ota2` and `functions`, then export the JSON report. Results are manual observations.
+The CLI can also attach manual observations to the report produced by a run, for example
+`--test-result reboot=passed`; it does not edit a previously saved report.
+
+Use the [experimental test issue template](https://github.com/senfkorn/shelly2esphome/issues/new?template=experimental-test.yml)
+for successful, failed and blocked attempts. Include the tool commit, model/hardware revision,
+stock and ESPHome versions, report JSON, test results and whether serial recovery was needed.
+For an unknown model, submit its read-only diagnosis and the model description.
+
+### Diagnostic privacy
+
+Reports contain only selected technical fields: schema/feature revision, profile, generation,
+plausibly formatted stock version, input SHA-256 hashes, checked chip/layout sizes and offsets,
+target slot, guard/flow outcomes and manual test results.
+
+They do **not** contain IP/MAC addresses, device names, local file paths, credentials,
+YAML contents, raw RPC responses, raw logs or exception messages. Failed CLI attempts also
+export a report when `--report` is set and the destination is writable.
+
+There is **no automatic upload or telemetry**. Review the exported JSON before attaching it
+to a public issue. BIN, ZIP and YAML files are not suitable diagnostic attachments.
 
 ## Troubleshooting
 
-| Message | Cause / fix |
-|---------|-------------|
-| Shelly is password protected | Disable authentication in the Shelly web UI. |
-| Shelly did not download the file | Firewall blocks incoming connections, or PC and Shelly are in different networks/VLANs. |
-| Shelly rolled back to ... | `OTA.Commit` came too late. Just run the tool again. |
-| Shelly rejected the package | The device still runs Shelly firmware, nothing is broken. Please open an issue with the log. |
-| Device no longer responds | ESPHome started but cannot reach Wi-Fi. Look for the ESPHome fallback hotspot, otherwise flash via serial. |
-| ... is already running ESPHome | Nothing to do, update via ESPHome as usual. |
+| Symptom / check | What to do |
+|-----------------|------------|
+| Password-protected RPC | Authentication is unsupported; review the device's access settings before testing. |
+| `profile` / `profile_and_stock_required` | Only PlugSG3 and S2PMG4 have experimental package profiles; other models can use diagnosis. |
+| `factory_and_stock_required` | Supply both a factory BIN and the matching official stock ZIP. |
+| `stock_identity` / `package_layout` | Check exact model, installed stock version, complete CSV, target chip and factory build. |
+| `https_required` / `security_state_unknown` | Enhanced-security or unknown transport state is blocked. This flow supports local HTTP updates only. |
+| `target_slot_zero_required` | Allow incoming UDP, then recheck. For slot 1, manually update/reinstall stock firmware through Shelly's official procedure. |
+| `debug_restore_failed` | No update is started. Restore the previous UDP debug destination in Shelly settings before another attempt. |
+| Device never downloads the package | Check PC firewall, local HTTP port and network/VLAN connectivity. |
+| Gen2 rolls back to its previous stock version | Commit/reboot verification failed; stock is still present. Recheck connectivity and retry. |
+| Shelly rejects the package | Stock firmware is still reachable. Report the failure; do not bypass experimental guards. |
+| Device becomes unreachable | Check Wi-Fi/fallback hotspot; serial recovery may be necessary. An API-port observation does not establish hardware success. |
+| Experimental controls are missing | Use current source or a current main-build artifact; v1.0.0 contains Gen2 only. |
 
-## Development
+## Development and builds
 
 ```bash
-python3 dev/test_shelly2esphome.py      # 35 tests, no real device needed
-python3 dev/mockshelly.py --scenario normal
-python3 shelly2esphome.py 127.0.0.1:18080 firmware.bin
+python dev/test_shelly2esphome.py
+python dev/test_experimental.py
+python dev/mockshelly.py --scenario normal
 ```
 
-`dev/mockshelly.py` simulates a Plus 2PM including the rollback without `OTA.Commit`, the
-rejection of compressed zips and several error scenarios (`--scenario auth`, `no_fetch`,
-`ignore_commit`, `reject_esphome`, `esphome_silent`, ...). The tests only talk to
-`127.0.0.1` and block any RPC to other addresses.
+The Gen2 tests use a loopback-only mock implementing rollback and update rejection.
+Experimental tests use synthetic C3/C6 images and mocked RPC to check package validation,
+read-only operations, slot/security guards, logging restoration and report privacy.
+Real-firmware tests are skipped unless their external fixtures are available.
 
-**Releases:** pushing a tag `v*` (e.g. `git tag v1.0.1 && git push origin v1.0.1`) makes
-GitHub Actions run the tests, build both Windows exes with PyInstaller and attach them to
-the release ([.github/workflows/release.yml](.github/workflows/release.yml)).
+[Tests workflow](.github/workflows/test.yml) runs on Linux and Windows for pushes and pull requests.
+[Windows build workflow](.github/workflows/release.yml) runs tests, builds GUI/CLI executables with
+PyInstaller, performs CLI smoke tests and uploads checksums plus binaries.
 
-## Credits
+- Push to `main` or manual workflow dispatch: build artifacts, no stable release.
+- Push a `v*` tag: attach the executables to a GitHub release.
 
-- The package format follows [mgos32-to-tasmota32](https://github.com/tasmota/mgos32-to-tasmota32).
-- Shelly stock firmware archive hosted by rojer.me.
+To add an experimental model, provide an exact device identity, chip and partition layout,
+then add validation tests and obtain hardware evidence. A generation number or a successful
+report from another converter is insufficient to mark this tool's profile as tested.
 
-Not affiliated with Shelly (Allterco Robotics) or ESPHome / Open Home Foundation.
-Use at your own risk.
+## Credits and technical references
+
+- Gen2 package format: [mgos32-to-tasmota32](https://github.com/tasmota/mgos32-to-tasmota32).
+- Gen2 stock firmware archive: rojer.me.
+- Gen3 layout and target-slot observations: [free-shelly-ota](https://github.com/oxynatOr/free-shelly-ota).
+- Gen4 layout and package documentation: [shelly-gen4-esphome](https://github.com/automatous-io/shelly-gen4-esphome).
+- [Shelly Sys RPC / UDP logging documentation](https://shelly-api-docs.shelly.cloud/gen2/ComponentsAndServices/Sys/).
+- Further implementation details and source links: [experimental guide](docs/EXPERIMENTAL.md).
+
+Not affiliated with Shelly or ESPHome / Open Home Foundation.
 
 ## License
 
-[GPL-3.0-or-later](LICENSE). The Shelly stock firmware is not part of this repository.
-
----
+[GPL-3.0-or-later](LICENSE). Shelly stock firmware is not distributed in this repository.
 
 ## Deutsch
 
-ESPHome per OTA auf Shelly Gen2 (ESP32) flashen, ohne Aufschrauben und ohne seriellen Adapter.
+ESPHome per OTA auf Shelly-Geräte mit Herstellerfirmware installieren. Plus 2PM Gen2 wurde
+auf echter Hardware getestet; Plug S Gen3 und 2PM Gen4 sind **experimentell und noch nicht
+auf echter Hardware durch dieses Projekt validiert**.
 
-**Start**
-- Windows: `shelly2esphome.exe` aus dem [neuesten Release](https://github.com/senfkorn/shelly2esphome/releases/latest) laden und doppelklicken, Python ist nicht nötig.
-  SmartScreen warnt einmal (nicht signiert): „Weitere Informationen“ -> „Trotzdem ausführen“.
-  Alternativ mit Python 3 von python.org: `shelly2esphome.pyw` doppelklicken.
-  Für die Kommandozeile gibt es `shelly2esphome-cli.exe`.
-  Beim ersten Flashen die Firewall-Abfrage für *private Netzwerke* zulassen.
-- Linux: `sudo apt install python3-tk` (nur für die GUI), dann `python3 shelly2esphome.py`.
+- **Gen2:** aktuelles Release verwenden, Gerät und Firmware im Hauptfenster wählen,
+  prüfen und nach Bestätigung flashen.
+- **Gen3/Gen4:** aktuellen Quellcode oder ein erfolgreiches Windows-Artefakt von `main`
+  verwenden. Im Fenster **Gen3 / Gen4 (experimental)** zunächst Diagnose ausführen,
+  passendes offizielles Stock-ZIP auswählen, CSV exportieren, passende Factory-BIN bauen
+  und die Vorabprüfung durchführen. Die v1.0.0-EXE enthält diesen Pfad noch nicht.
+- Nach dem Flashen echte API-Verbindung, Neustart und **zwei weitere unterschiedliche
+  OTA-Builds** sowie die Gerätefunktionen testen. Ergebnisse manuell eintragen und den
+  Diagnosebericht über die Issue-Vorlage zurückmelden.
+- Berichte werden nur lokal gespeichert. Keine automatischen Uploads; keine BIN-, ZIP-
+  oder YAML-Dateien öffentlich anhängen. Bei einem Fehler kann serielle Rettung nötig sein.
 
-**Bedienung:** Netz durchsuchen oder IP eintragen, ESPHome-Firmware wählen (ESPHome-Dashboard
--> Install -> Manual download, am besten *Factory format*), „Prüfen“, dann „ESPHome flashen“.
-Sprache oben rechts umschaltbar.
-
-**Wichtig für die ESPHome-Config:** `CONFIG_FREERTOS_UNICORE: y` und 160 MHz setzen
-(siehe [ESPHome config](#esphome-config)), sonst startet die Firmware auf älteren
-Single-Core-Geräten nicht. Das Tool warnt bei Multicore-Builds.
-
-Eine kurze Beispiel-Config für den Plus 2PM liegt in
-[examples/shelly-plus-2pm.yaml](examples/shelly-plus-2pm.yaml).
-
-**Getestet** unter Linux und Windows 11.
-
-**Achtung:** Zurück zur Shelly-Firmware geht danach nur noch seriell.
+Die vollständige Anleitung steht oben auf Englisch. Eine ausführliche deutsche
+Experimental-Anleitung liegt unter [docs/EXPERIMENTAL.md](docs/EXPERIMENTAL.md).
