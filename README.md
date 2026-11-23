@@ -25,7 +25,7 @@ Support applies to the individual model, not to an entire generation.
 
 | Generation | Model / profile | Chip | Status |
 |------------|-----------------|------|--------|
-| Gen2 | Plus 2PM (`Plus2PM`) | ESP32 | Hardware tested: stock 1.7.1 / 1.7.5 → ESPHome 2026.9.1 |
+| Gen2 | Plus 2PM (`Plus2PM`) | ESP32 | Hardware tested: stock 1.7.1 / 1.7.5 → ESPHome 2026.9.1. Stock 1.7.6 → 1.3.3 → ESPHome 2026.11.0 also verified. |
 | Gen2 | Plus 1, Plus 1PM, Plus I4, Plus Plug S, Plus Uni | ESP32 | Untested; included in the existing Gen2 flow |
 | Gen3 | Plug S Gen3 (`PlugSG3`) | ESP32-C3, 8 MB | Experimental profile; no hardware validation yet |
 | Gen4 | 2PM Gen4 (`S2PMG4`) | ESP32-C6, 8 MB | Experimental profile; no hardware validation yet |

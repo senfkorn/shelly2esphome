@@ -6,6 +6,9 @@ esphome:
 
 esp32:
   board: esp32dev
+  # For devices using the partition table from the converter's pinned Plus 2PM stock 1.3.3
+  # package, uncomment this to build against the same layout for application OTA updates.
+  # partitions: shelly-plus-2pm-stock-1.3.3.csv
   framework:
     type: esp-idf
     sdkconfig_options:
