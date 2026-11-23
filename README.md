@@ -25,7 +25,7 @@ Support applies to the individual model, not to an entire generation.
 
 | Generation | Model / profile | Chip | Status |
 |------------|-----------------|------|--------|
-| Gen2 | Plus 2PM (`Plus2PM`) | ESP32 | Hardware tested: stock 1.7.1 / 1.7.5 → ESPHome 2026.9.1. [Stock 1.7.6 → ESPHome 2026.11.0](#plus-2pm-stock-176) also verified. |
+| Gen2 | Plus 2PM (`Plus2PM`) | ESP32 | Hardware tested: stock 1.7.1 / 1.7.5 → ESPHome 2026.9.1. Stock 1.7.6 → 1.3.3 → ESPHome 2026.11.0 also verified. |
 | Gen2 | Plus 1, Plus 1PM, Plus I4, Plus Plug S, Plus Uni | ESP32 | Untested; included in the existing Gen2 flow |
 | Gen3 | Plug S Gen3 (`PlugSG3`) | ESP32-C3, 8 MB | Experimental profile; no hardware validation yet |
 | Gen4 | 2PM Gen4 (`S2PMG4`) | ESP32-C6, 8 MB | Experimental profile; no hardware validation yet |
@@ -294,19 +294,6 @@ Use the [experimental test issue template](https://github.com/senfkorn/shelly2es
 for successful, failed and blocked attempts. Include the tool commit, model/hardware revision,
 stock and ESPHome versions, report JSON, test results and whether serial recovery was needed.
 For an unknown model, submit its read-only diagnosis and the model description.
-
-### Plus 2PM stock 1.7.6
-
-One Gen2 Plus 2PM (`SNSW-102P16EU`) running stock `1.7.6-g01e9e18` was converted
-using the Gen2 CLI at commit `f1c1aad`. The converter downgraded to its pinned
-Shelly 1.3.3 package before installing ESPHome 2026.11.0 over Wi-Fi.
-
-The device reconnected through the ESPHome native API, accepted one subsequent
-ESPHome OTA with a different build, and reconnected again after reboot. Both
-relay outputs and their power readings were verified with loads of approximately
-19 W and 15 W. No serial recovery was needed. ESPHome reported a dual-core
-ESP32 rev 3.1. The PCB revision and electrical protection trip points were not
-independently verified.
 
 ### Diagnostic privacy
 
